@@ -1,16 +1,70 @@
-# signapp_apk
+1. Executar
 
-A new Flutter project.
+```shell
+     keytool -genkey -v -keystore ~/upload-keystore.jks -keyalg RSA \
+          -keysize 2048 -validity 10000 -alias upload
+   ```
+   
+2. Criar arquivo em [project]/android/key.properties
 
-## Getting Started
+```properties
+   storePassword=<password-from-previous-step>
+   keyPassword=<password-from-previous-step>
+   keyAlias=upload
+   storeFile=<keystore-file-location>
+```
 
-This project is a starting point for a Flutter application.
+3. Adicionar em [project]/android/app/build.gradle
 
-A few resources to get you started if this is your first Flutter project:
+```groovy
+   def keystoreProperties = new Properties()
+   def keystorePropertiesFile = rootProject.file('key.properties')
+   if (keystorePropertiesFile.exists()) {
+       keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+   }
+
+   android {
+       "..."
+   }
+```
+
+4.  Substituir código em [project]/android/app/build.gradle
+
+### Antes
+```groovy
+   buildTypes {
+       release {
+           // TODO: Add your own signing config for the release build.
+           // Signing with the debug keys for now,
+           // so `flutter run --release` works.
+           signingConfig signingConfigs.debug
+       }
+   }
+
+```
+
+### Depois
+
+```groovy
+   signingConfigs {
+       release {
+           keyAlias keystoreProperties['keyAlias']
+           keyPassword keystoreProperties['keyPassword']
+           storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+           storePassword keystoreProperties['storePassword']
+       }
+   }
+   buildTypes {
+       release {
+           signingConfig signingConfigs.release
+       }
+   }
+
+```
+
+### Referências
 
 - [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
 - [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- [online documentation](https://docs.flutter.dev/)
+- [signapp](https://docs.flutter.dev/deployment/android)
